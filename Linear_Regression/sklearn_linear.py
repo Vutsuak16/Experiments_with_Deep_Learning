@@ -28,12 +28,16 @@ plt.figure(1)
 plt.xlabel("X-axis")
 plt.ylabel("Y-axis")
 
-plt.subplot('211')
+plt.subplot('231')
+plt.scatter(data[:,0].reshape(-1,1),data[:,1].reshape(-1,1),  color='black')
+plt.title("plot_of_data")
+
+plt.subplot('232')
 plt.scatter(data[:,0].reshape(-1,1),data[:,1].reshape(-1,1),  color='black')
 plt.plot(x,line, color='blue')
 plt.title("regressionline_sklearn_fullData")
 
-plt.subplot('212')
+plt.subplot('233')
 plt.scatter(X_test, Y_test,  color='black')
 plt.plot(X_test, prediction, color='blue')
 plt.title("regressionline_sklearn_TestData")
