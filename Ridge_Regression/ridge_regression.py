@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 
-def apply_linear_regression(data):
+def apply_ridge_regression(data,ridge_lambda):
 
 	X_train=data[:,0][:80]
 	Y_train=data[:,1][:80]
@@ -14,63 +14,120 @@ def apply_linear_regression(data):
 	
 	
 
-	alpha=0.001
-	theta=np.array([1,1])
+	alpha=0.00000000000000001
+	theta=np.array([1]*16)
 	iterations=100
 	X_1=X_train
 
-	for i in range(iterations):
-		theta_0=theta[0]- alpha * (1/len(Y_train)) * np.sum([np.dot(X_train[i],theta)- Y_train[i] for i in range(len(Y_train))])
-		theta_1=theta[1] - alpha * (1/len(Y_train)) * np.sum([np.dot(X_1[i],np.dot(X_train[i],theta)-Y_train[i])for i in range(len(Y_train))])
-		theta= np.array([theta_0,theta_1])
+	for k in range(iterations):
+		for j in range(16):
+			#theta_0=theta[0]- alpha * (1/len(Y_train)) * np.sum([np.dot(X_train[i],theta)- Y_train[i] for i in range(len(Y_train))])
+			theta[j]=theta[j]*(2*ridge_lambda) - alpha * (1/len(Y_train)) * np.sum([np.dot(np.power(X_1[i],j),np.dot(np.power(X_train[i],j),theta)-Y_train[i])for i in range(len(Y_train))])
+		
 		
 
 	
 	return theta
 
-def mse(data,prediction):
-	line=prediction[1]*data[:,0] + prediction[0]
-	true_y=data[:,1]
-	square_error=[]
-	for i in range(len(line)):
-		square_error.append((line[i]-true_y[i])**2)
-	return sum(square_error)/len(line)
+
 
 
 
 
 data=np.load("linRegData.npy")
-l=apply_linear_regression(data)
+ridge_lambdas=[0.01,0.05,0.1,0.5,1,5,10]
+thetas=[]
+for a in ridge_lambdas:
+	l=apply_ridge_regression(data,a)
+	thetas.append(l)
 
-MSE=mse(data,l)
-print(MSE)
+ct=0
+avg_cross_val=[]
 
-X_test=data[:,0][80:100]
-Y_test=data[:,1][80:100]
-line=l[1]*X_test + l[0]
-line2=l[1]*data[:,0] + l[0]
+for i in thetas:
+	ct=0
+	error=[]
+	while True:
+		np.random.shuffle(data)
+		val_data_X=data[:,0][ct:20+ct]
+		val_data_Y=data[:,1][ct:20+ct]
+		error_sum=0
+		for j in range(20):
+			y=0
+			for k in range(16):
+				y+=i[k]*(val_data_X[j]**k)
+			error_sum+=(val_data_Y[j])-y
+		error.append(error_sum)
+		ct+=20
+		if ct==100:
+			avg_cross_val.append((sum(error)/20))
+			break
+
+index=avg_cross_val.index(min(avg_cross_val))
+
+
+test_error=[]
+for i in thetas:
+	
+	np.random.shuffle(data)
+	test_data_X=data[:,0][80:]
+	test_data_Y=data[:,1][80:]
+	error_sum=0
+	for j in range(20):
+		y=0
+		for k in range(16):
+			y+=i[k]*(test_data_X[j]**k)
+		error_sum+=(test_data_Y[j])-y
+	test_error.append(error_sum/20)
 
 
 
-
-# Plot outputs
 plt.figure(1)
+
+
+plt.subplot('231')
+plt.xlabel("Lambdas")
+plt.ylabel("cross_validation_error")
+axes = plt.gca()
+axes.set_ylim([-2,6])
+plt.scatter(ridge_lambdas,avg_cross_val, color='black')
+plt.title("cross_validation_error vs lambdas")
+
+plt.subplot('232')
+plt.xlabel("Lambdas")
+plt.ylabel("test_error")
+axes = plt.gca()
+axes.set_ylim([-2,4])
+plt.scatter(ridge_lambdas,test_error, color='red')
+plt.title("test_error vs lambdas")
+
+plt.subplot('233')
 plt.xlabel("X-axis")
 plt.ylabel("Y-axis")
 
-plt.subplot('231')
-plt.scatter(data[:,0],data[:,1],  color='black')
-plt.title("plot_of_data")
+choosen_theta=thetas[index]
 
-plt.subplot('232')
-plt.scatter(data[:,0],data[:,1],  color='black')
-plt.plot(data[:,0],line2, color='blue')
-plt.title("regression_line_fullData")
+j=[]
+for i in data[:,0][:80]:
+	y=0
+	for k in range(16):
+			y+=choosen_theta[k]*(i**k)
+	j.append(y)
 
-plt.subplot('233')
-plt.scatter(X_test, Y_test,  color='black')
-plt.plot(X_test, line, color='blue')
-plt.title("regressionline_testData")
+j=list(map(lambda x: x/max(j)+0.5,j))
+
+
+
+
+p15 = np.poly1d(np.polyfit(data[:,0][:80], j, 15))
+axes = plt.gca()
+axes.set_ylim([-2,3])
+plt.scatter(data[:,0][:80],data[:,1][:80])
+x=np.linspace(-2,3,1000)
+plt.plot(x, p15(x), '-',color="green")
+
+plt.title("polynomial fit")
+
 
 plt.show()
 
