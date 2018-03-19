@@ -12,7 +12,7 @@ def one_hot(x,n):
 	o_h[np.arange(len(x)),x] = 1
 	return o_h
 
-def mnist(ntrain=60000,ntest=10000,onehot=False,subset=True,subset_num=2,shuffle=True):
+def mnist(ntrain=60000,ntest=10000,onehot=False,subset=True,digit_range=[0,2],shuffle=True):
 	data_dir = os.path.join(datasets_dir,'mnist/')
 	fd = open(os.path.join(data_dir,'train-images-idx3-ubyte'))
 	loaded = np.fromfile(file=fd,dtype=np.uint8)
@@ -48,7 +48,7 @@ def mnist(ntrain=60000,ntest=10000,onehot=False,subset=True,subset_num=2,shuffle
 
 
 	if subset:
-		subset_label = np.arange(subset_num)
+		subset_label = np.arange(digit_range[0], digit_range[1])
 		train_data_sub = []
 		train_label_sub = []
 		test_data_sub = []
@@ -75,7 +75,7 @@ def mnist(ntrain=60000,ntest=10000,onehot=False,subset=True,subset_num=2,shuffle
 		trY = train_label_sub[0]
 		teX = test_data_sub[0]
 		teY = test_label_sub[0]
-		for i in range(subset_num-1):
+		for i in range(digit_range[1]-digit_range[0]-1):
 			trX = np.concatenate((trX,train_data_sub[i+1]),axis=0)
 			trY = np.concatenate((trY,train_label_sub[i+1]),axis=0)
 			teX = np.concatenate((teX,test_data_sub[i+1]),axis=0)
@@ -97,6 +97,8 @@ def mnist(ntrain=60000,ntest=10000,onehot=False,subset=True,subset_num=2,shuffle
 	teX = np.squeeze(teX).T
 	trY = trY.reshape(1,-1)
 	teY = teY.reshape(1,-1)
+	trY = trY-digit_range[0]
+	teY = teY-digit_range[0]
 	return trX, trY, teX, teY		
 '''
 def main():
